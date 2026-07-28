@@ -1,0 +1,40 @@
+use std::sync::Arc;
+use tower_http::trace::TraceLayer;
+use tracing::{info, warn};
+
+mod domain;
+mod ports;
+mod adapters;
+mod config;
+mod telemetry;
+
+use config::AppConfig;
+use telemetry::init_telemetry;
+use ports::outbound::UserRepository;
+use ports::inbound::UserService;
+use adapters::outbound::MemoryUserRepository;
+use adapters::inbound::UserServiceImpl;
+use adapters::inbound::http::{user_routes, AppState};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    init_telemetry();
+    info!("🚀 Starting {{ project_name }} service...");
+
+    let config = AppConfig::load().unwrap_or_else(|_| AppConfig {
+        server: config::ServerConfig { host: "0.0.0.0".to_string(), port: 3000 },
+        database: config::DatabaseConfig { url: "postgres://localhost:5432/db".to_string(), max_connections: 5, use_memory_fallback: true },
+    });
+    let user_repo: Arc<dyn UserRepository> = Arc::new(MemoryUserRepository::new());
+    let user_service: Arc<dyn UserService> = Arc::new(UserServiceImpl::new(user_repo));
+
+    let state = AppState { user_service };
+    let app = user_routes(state).layer(TraceLayer::new_for_http());
+
+    let addr = format!("{}:{}", config.server.host, config.server.port);
+    let listener = tokio::net::TcpListener::bind(&addr).await?;
+    info!("⚡ Listening on http://{}", addr);
+
+    axum::serve(listener, app).await?;
+    Ok(())
+}

@@ -1,0 +1,35 @@
+use std::collections::HashMap;
+use std::sync::RwLock;
+use async_trait::async_trait;
+use crate::domain::{{ snake_name }}::{ {{ struct_name }}, {{ struct_name }}DomainError };
+use crate::ports::outbound::{{ snake_name }}_repo::{{ trait_name }};
+
+#[derive(Default)]
+pub struct {{ adapter_name }} {
+    storage: RwLock<HashMap<String, {{ struct_name }}>>,
+}
+
+impl {{ adapter_name }} {
+    pub fn new() -> Self {
+        Self { storage: RwLock::new(HashMap::new()) }
+    }
+}
+
+#[async_trait]
+impl {{ trait_name }} for {{ adapter_name }} {
+    async fn find_by_id(&self, id: &str) -> Result<{{ struct_name }}, {{ struct_name }}DomainError> {
+        let lock = self.storage.read().map_err(|e| {{ struct_name }}DomainError::StorageError(e.to_string()))?;
+        lock.get(id).cloned().ok_or_else(|| {{ struct_name }}DomainError::NotFound(id.to_string()))
+    }
+
+    async fn save(&self, entity: &{{ struct_name }}) -> Result<(), {{ struct_name }}DomainError> {
+        let mut lock = self.storage.write().map_err(|e| {{ struct_name }}DomainError::StorageError(e.to_string()))?;
+        lock.insert(entity.id.clone(), entity.clone());
+        Ok(())
+    }
+
+    async fn list_all(&self) -> Result<Vec<{{ struct_name }}>, {{ struct_name }}DomainError> {
+        let lock = self.storage.read().map_err(|e| {{ struct_name }}DomainError::StorageError(e.to_string()))?;
+        Ok(lock.values().cloned().collect())
+    }
+}

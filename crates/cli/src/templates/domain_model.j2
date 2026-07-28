@@ -1,0 +1,19 @@
+use serde::{Deserialize, Serialize};
+use thiserror::Error;
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct {{ struct_name }} {
+    pub id: String,
+    pub name: String,
+    pub created_at: String,
+}
+
+#[derive(Debug, Error)]
+pub enum {{ struct_name }}DomainError {
+    #[error("{{ struct_name }} with ID '{0}' not found")]
+    NotFound(String),
+    #[error("Storage failure: {0}")]
+    StorageError(String),
+    #[error("Validation error: {0}")]
+    ValidationError(String),
+}

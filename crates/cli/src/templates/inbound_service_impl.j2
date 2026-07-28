@@ -1,0 +1,44 @@
+use std::sync::Arc;
+use async_trait::async_trait;
+use crate::domain::{{ snake_name }}::{ {{ struct_name }}, {{ struct_name }}DomainError };
+use crate::ports::inbound::{{ snake_name }}_service::{{ service_trait_name }};
+use crate::ports::outbound::{{ snake_name }}_repo::{{ repo_trait_name }};
+
+pub struct {{ impl_name }} {
+    repo: Arc<dyn {{ repo_trait_name }}>,
+}
+
+impl {{ impl_name }} {
+    pub fn new(repo: Arc<dyn {{ repo_trait_name }}>) -> Self {
+        Self { repo }
+    }
+}
+
+#[async_trait]
+impl {{ service_trait_name }} for {{ impl_name }} {
+    async fn get(&self, id: &str) -> Result<{{ struct_name }}, {{ struct_name }}DomainError> {
+        self.repo.find_by_id(id).await
+    }
+
+    async fn create(&self, name: String) -> Result<{{ struct_name }}, {{ struct_name }}DomainError> {
+        if name.trim().is_empty() {
+            return Err({{ struct_name }}DomainError::ValidationError("Name cannot be empty".to_string()));
+        }
+
+        let entity = {{ struct_name }} {
+            id: format!("id_{}", std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_millis())
+                .unwrap_or(0)),
+            name,
+            created_at: "2026-07-28T00:00:00Z".to_string(),
+        };
+
+        self.repo.save(&entity).await?;
+        Ok(entity)
+    }
+
+    async fn list(&self) -> Result<Vec<{{ struct_name }}>, {{ struct_name }}DomainError> {
+        self.repo.list_all().await
+    }
+}

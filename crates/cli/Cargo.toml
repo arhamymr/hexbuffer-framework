@@ -1,0 +1,12 @@
+[package]
+name = "arch-cli"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+inquire = "0.7"
+minijinja = "2.7"
+anyhow = "1.0"
+tokio = { version = "1.43", features = ["full"] }
+heck = "0.5"

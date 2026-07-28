@@ -1,0 +1,9 @@
+use async_trait::async_trait;
+use crate::domain::{{ snake_name }}::{ {{ struct_name }}, {{ struct_name }}DomainError };
+
+#[async_trait]
+pub trait {{ trait_name }}: Send + Sync {
+    async fn find_by_id(&self, id: &str) -> Result<{{ struct_name }}, {{ struct_name }}DomainError>;
+    async fn save(&self, entity: &{{ struct_name }}) -> Result<(), {{ struct_name }}DomainError>;
+    async fn list_all(&self) -> Result<Vec<{{ struct_name }}>, {{ struct_name }}DomainError>;
+}

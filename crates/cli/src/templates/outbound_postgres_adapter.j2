@@ -1,0 +1,58 @@
+use async_trait::async_trait;
+use sqlx::{PgPool, Row};
+use crate::domain::{{ snake_name }}::{ {{ struct_name }}, {{ struct_name }}DomainError };
+use crate::ports::outbound::{{ snake_name }}_repo::{{ trait_name }};
+
+pub struct {{ adapter_name }} {
+    pool: PgPool,
+}
+
+impl {{ adapter_name }} {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
+}
+
+#[async_trait]
+impl {{ trait_name }} for {{ adapter_name }} {
+    async fn find_by_id(&self, id: &str) -> Result<{{ struct_name }}, {{ struct_name }}DomainError> {
+        let row = sqlx::query("SELECT id, name, created_at FROM {{ table_name }} WHERE id = $1")
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| {{ struct_name }}DomainError::StorageError(e.to_string()))?;
+
+        match row {
+            Some(r) => Ok({{ struct_name }} {
+                id: r.get("id"),
+                name: r.get("name"),
+                created_at: r.get("created_at"),
+            }),
+            None => Err({{ struct_name }}DomainError::NotFound(id.to_string())),
+        }
+    }
+
+    async fn save(&self, entity: &{{ struct_name }}) -> Result<(), {{ struct_name }}DomainError> {
+        sqlx::query("INSERT INTO {{ table_name }} (id, name, created_at) VALUES ($1, $2, $3) ON CONFLICT (id) DO UPDATE SET name = $2")
+            .bind(&entity.id)
+            .bind(&entity.name)
+            .bind(&entity.created_at)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| {{ struct_name }}DomainError::StorageError(e.to_string()))?;
+        Ok(())
+    }
+
+    async fn list_all(&self) -> Result<Vec<{{ struct_name }}>, {{ struct_name }}DomainError> {
+        let rows = sqlx::query("SELECT id, name, created_at FROM {{ table_name }}")
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| {{ struct_name }}DomainError::StorageError(e.to_string()))?;
+
+        Ok(rows.into_iter().map(|r| {{ struct_name }} {
+            id: r.get("id"),
+            name: r.get("name"),
+            created_at: r.get("created_at"),
+        }).collect())
+    }
+}
