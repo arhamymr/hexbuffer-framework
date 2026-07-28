@@ -1,4 +1,4 @@
-# HexBuffer Framework & `hb-cli`
+# Hexbuffer Framework
 
 **HexBuffer Framework** is a modular, production-ready Rust application framework built on the principles of **Hexagonal Architecture (Ports and Adapters)**. It isolates pure domain logic from external dependencies, transport layers, and databases, allowing for high testability, maintainability, and seamless infrastructure swapping.
 
