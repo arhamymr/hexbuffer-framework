@@ -2,7 +2,7 @@
 
 **HexBuffer Framework** is a modular, production-ready Rust application framework built on the principles of **Hexagonal Architecture (Ports and Adapters)**. It isolates pure domain logic from external dependencies, transport layers, and databases, allowing for high testability, maintainability, and seamless infrastructure swapping.
 
-Includes **`hb-cli`** (aliases: `hexbuffer-cli`, `arch-cli`), a developer CLI tool to scaffold microservices, domain models, ports, HTTP/gRPC adapters, Docker environments, and SQL migrations.
+Includes **`hb-cli`** (alias: `hexbuffer-cli`), a developer CLI tool to scaffold microservices, domain models, ports, HTTP/gRPC adapters, Docker environments, and SQL migrations.
 
 ---
 
@@ -40,9 +40,9 @@ hexbuffer-framework/
 │   │   │   ├── config/        # Environment and application configuration (Figment)
 │   │   │   └── telemetry/     # Tracing and logging initialization
 │   │   └── Cargo.toml
-│   └── cli/                    # Scaffolder CLI binary (`hb-cli` / `hexbuffer-cli` / `arch-cli`)
+│   └── cli/                    # Scaffolder CLI binary (`hb-cli` / `hexbuffer-cli`)
 │       ├── src/
-│       │   ├── bin/           # hb-cli & arch-cli binary entrypoints
+│       │   ├── bin/           # hb-cli binary entrypoint
 │       │   ├── commands/      # Subcommands: new, generate (g), migrate, run
 │       │   └── templates/     # MiniJinja code & config generation templates
 │       └── Cargo.toml
