@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 use anyhow::Result;
-use inquire::{Select, Text};
+use inquire::{Confirm, Select, Text};
 use crate::templates::CodeGenerator;
 
 pub fn handle_new() -> Result<()> {
@@ -18,10 +18,14 @@ pub fn handle_new() -> Result<()> {
 
     let primary_adapter = Select::new(
         "Select Primary (Inbound) Adapter:",
-        vec!["Axum HTTP Server", "CLI Runner"],
+        vec!["Axum HTTP Server", "Tonic gRPC Server", "CLI Runner"],
     ).prompt()?;
 
-    println!("\n🚀 Scaffolding project '{}' [DB: {}, Adapter: {}]...", project_name, db_choice, primary_adapter);
+    let include_docker = Confirm::new("Include Docker & Docker-Compose files?")
+        .with_default(true)
+        .prompt()?;
+
+    println!("\n🚀 Scaffolding project '{}' [DB: {}, Adapter: {}, Docker: {}]...", project_name, db_choice, primary_adapter, include_docker);
 
     let generator = CodeGenerator::new()?;
     let root = Path::new(&project_name);
@@ -35,9 +39,12 @@ pub fn handle_new() -> Result<()> {
     fs::create_dir_all(root.join("src/ports/inbound"))?;
     fs::create_dir_all(root.join("src/ports/outbound"))?;
     fs::create_dir_all(root.join("src/adapters/inbound/http"))?;
+    fs::create_dir_all(root.join("src/adapters/inbound/grpc"))?;
     fs::create_dir_all(root.join("src/adapters/outbound"))?;
     fs::create_dir_all(root.join("src/config"))?;
     fs::create_dir_all(root.join("src/telemetry"))?;
+    fs::create_dir_all(root.join("migrations"))?;
+    fs::create_dir_all(root.join("proto"))?;
 
     // Render & write Cargo.toml
     let cargo_toml = generator.render_cargo_toml(&project_name)?;
@@ -46,6 +53,20 @@ pub fn handle_new() -> Result<()> {
     // Render & write main.rs
     let main_rs = generator.render_main_rs(&project_name)?;
     fs::write(root.join("src/main.rs"), main_rs)?;
+
+    // Write Docker files
+    if include_docker {
+        let dockerfile = generator.render_dockerfile(&project_name)?;
+        fs::write(root.join("Dockerfile"), dockerfile)?;
+
+        let docker_compose = generator.render_docker_compose(&project_name)?;
+        fs::write(root.join("docker-compose.yml"), docker_compose)?;
+        println!("  [+] Scaffolding Docker & docker-compose.yml");
+    }
+
+    // Write initial SQL migration
+    let migration_sql = generator.render_migration_sql("init_schema", "users", "0001")?;
+    fs::write(root.join("migrations/0001_init_schema.sql"), migration_sql)?;
 
     // Write sample domain model (User)
     let domain_user = generator.render_domain_model("User")?;
@@ -77,7 +98,15 @@ pub fn handle_new() -> Result<()> {
     let http_handler = generator.render_inbound_http_handler("user", "User", "UserService")?;
     fs::write(root.join("src/adapters/inbound/http/user_handler.rs"), http_handler)?;
     fs::write(root.join("src/adapters/inbound/http/mod.rs"), "pub mod user_handler;\npub use user_handler::*;\n")?;
-    fs::write(root.join("src/adapters/inbound/mod.rs"), "pub mod http;\npub mod user_service_impl;\npub use user_service_impl::*;\n")?;
+
+    let grpc_proto = generator.render_grpc_proto("user", "User")?;
+    fs::write(root.join("proto/user.proto"), grpc_proto)?;
+
+    let grpc_server = generator.render_grpc_server_adapter("user", "User", "UserService")?;
+    fs::write(root.join("src/adapters/inbound/grpc/user_grpc.rs"), grpc_server)?;
+    fs::write(root.join("src/adapters/inbound/grpc/mod.rs"), "pub mod user_grpc;\npub use user_grpc::*;\n")?;
+
+    fs::write(root.join("src/adapters/inbound/mod.rs"), "pub mod grpc;\npub mod http;\npub mod user_service_impl;\npub use user_service_impl::*;\n")?;
     fs::write(root.join("src/adapters/mod.rs"), "pub mod inbound;\npub mod outbound;\n")?;
 
     // Config & Telemetry

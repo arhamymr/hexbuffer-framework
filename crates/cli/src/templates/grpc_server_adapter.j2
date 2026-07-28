@@ -1,0 +1,13 @@
+use std::sync::Arc;
+use tonic::{Request, Response, Status};
+use crate::ports::inbound::{{ snake_name }}_service::{{ service_trait_name }};
+
+pub struct {{ struct_name }}GrpcServer {
+    service: Arc<dyn {{ service_trait_name }}>,
+}
+
+impl {{ struct_name }}GrpcServer {
+    pub fn new(service: Arc<dyn {{ service_trait_name }}>) -> Self {
+        Self { service }
+    }
+}

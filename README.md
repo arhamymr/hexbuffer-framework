@@ -1,17 +1,21 @@
-# HexBuffer Framework
+# HexBuffer Framework & `hexbuffer-cli`
 
-HexBuffer Framework is a modular, production-ready Rust application framework built on the principles of Hexagonal Architecture (Ports and Adapters). It isolates core domain logic from external dependencies, transport layers, and databases, allowing for high testability, maintainability, and seamless infrastructure swapping.
+**HexBuffer Framework** is a modular, production-ready Rust application framework built on the principles of **Hexagonal Architecture (Ports and Adapters)**. It isolates pure domain logic from external dependencies, transport layers, and databases, allowing for high testability, maintainability, and seamless infrastructure swapping.
+
+Includes **`hexbuffer-cli`** (alias: `arch-cli`), an interactive CLI tool inspired by modern web/Go frameworks to scaffold microservices, domain models, ports, HTTP/gRPC adapters, Docker environments, and SQL migrations.
 
 ---
 
 ## Features
 
-- **Hexagonal Architecture**: Strict separation of concerns between core Domain logic, Inbound/Outbound Ports, and Adapter implementations.
-- **Interactive Scaffolding CLI**: Includes `arch-cli`, a command-line utility for generating new projects, domain models, ports, and adapters.
-- **Asynchronous Web Runtime**: Powered by Tokio and Axum for high-throughput HTTP handling.
-- **Pluggable Persistence**: Built-in repository implementations using SQLx (PostgreSQL and SQLite) with automatic in-memory fallback for local development.
-- **Layered Configuration**: Environment and file-based configuration parsing utilizing Figment.
-- **Structured Observability**: Integrated tracing subscriber setup for structured logging and HTTP request tracing.
+- **Hexagonal Architecture**: Strict separation between core Domain logic, Inbound/Outbound Ports, and Adapter implementations.
+- **Interactive Scaffolding CLI (`hexbuffer-cli` / `arch-cli`)**: Interactive terminal prompts for generating projects, domain models, ports, adapters, gRPC services, and migrations.
+- **Asynchronous HTTP & gRPC Runtimes**: Powered by Tokio, Axum for REST APIs, and Tonic for gRPC services.
+- **Pluggable Persistence**: Built-in repository implementations using SQLx (PostgreSQL and SQLite) with automatic thread-safe in-memory fallback for local development.
+- **Database Migrations (`hexbuffer-cli migrate`)**: Integrated CLI for generating timestamped SQL migrations and running database schema updates.
+- **Docker & Container Scaffolding**: Multi-stage `Dockerfile` and `docker-compose.yml` generation for quick deployment with PostgreSQL and Redis.
+- **Layered Configuration**: Environment and file-based configuration loading via Figment.
+- **Structured Observability**: Integrated `tracing` and `tracing-subscriber` setup for structured logging and HTTP request span tracing.
 
 ---
 
@@ -22,23 +26,25 @@ The workspace is organized into discrete crates within the `crates/` directory:
 ```text
 hexbuffer-framework/
 ├── Cargo.toml
+├── README.md
 ├── crates/
-│   ├── framework/              # Core framework library and HTTP runtime
+│   ├── framework/              # Core framework library & example HTTP runtime (`hexbuffer-framework`)
 │   │   ├── src/
-│   │   │   ├── domain/        # Pure business logic and domain entities
+│   │   │   ├── domain/        # Pure business logic and domain entities (zero I/O dependencies)
 │   │   │   ├── ports/         # Trait definitions for Inbound & Outbound interfaces
 │   │   │   │   ├── inbound/   # Driver ports (Use cases, application services)
-│   │   │   │   └── outbound/  # Driven ports (Repository, external API traits)
+│   │   │   │   └── outbound/  # Driven ports (Repository, cache, external API traits)
 │   │   │   ├── adapters/      # Implementations of Ports
-│   │   │   │   ├── inbound/   # HTTP handlers, REST routes, CLI interfaces
-│   │   │   │   └── outbound/  # Database repositories (Postgres, Memory)
-│   │   │   ├── config/        # Environment and application configuration
+│   │   │   │   ├── inbound/   # HTTP (Axum) handlers, gRPC (Tonic) servers, CLI runners
+│   │   │   │   └── outbound/  # Database repositories (Postgres, SQLite, Memory)
+│   │   │   ├── config/        # Environment and application configuration (Figment)
 │   │   │   └── telemetry/     # Tracing and logging initialization
 │   │   └── Cargo.toml
-│   └── cli/                    # Code generator and CLI developer tools (`arch-cli`)
+│   └── cli/                    # Scaffolder CLI binary (`hexbuffer-cli` / `arch-cli`)
 │       ├── src/
-│       │   ├── commands/      # CLI subcommand logic (new, generate, run)
-│       │   └── templates/     # Scaffolding templates
+│       │   ├── bin/           # arch-cli compatibility alias binary
+│       │   ├── commands/      # Subcommands: new, generate (g), migrate, run
+│       │   └── templates/     # MiniJinja code & config generation templates
 │       └── Cargo.toml
 ```
 
@@ -47,46 +53,46 @@ hexbuffer-framework/
 ## Data Flow Diagram
 
 ```text
-[ HTTP Client / External Services ]
-                 |
-                 v
-     +-----------------------+
-     |   Inbound Adapter     |  (Axum Web Handler / REST)
-     +-----------------------+
-                 |
-                 v
-     +-----------------------+
-     |     Inbound Port      |  (Service Interface Trait)
-     +-----------------------+
-                 |
-                 v
-     +-----------------------+
-     |     Domain Logic      |  (Entities & Business Rules)
-     +-----------------------+
-                 |
-                 v
-     +-----------------------+
-     |     Outbound Port     |  (Repository Interface Trait)
-     +-----------------------+
-                 |
-                 v
-     +-----------------------+
-     |   Outbound Adapter    |  (PostgreSQL / Memory Repository)
-     +-----------------------+
+[ HTTP Client / gRPC Client / External Services ]
+                        |
+                        v
+         +-----------------------------+
+         |      Inbound Adapter        |  (Axum REST / Tonic gRPC / CLI)
+         +-----------------------------+
+                        |
+                        v
+         +-----------------------------+
+         |        Inbound Port         |  (Service Trait Interface)
+         +-----------------------------+
+                        |
+                        v
+         +-----------------------------+
+         |        Domain Logic         |  (Pure Entities & Domain Errors)
+         +-----------------------------+
+                        |
+                        v
+         +-----------------------------+
+         |        Outbound Port        |  (Repository Trait Interface)
+         +-----------------------------+
+                        |
+                        v
+         +-----------------------------+
+         |      Outbound Adapter       |  (PostgreSQL / SQLite / Memory Repo)
+         +-----------------------------+
 ```
 
 ---
 
 ## Prerequisites
 
-- **Rust**: Toolchain 1.85 or later (2024 edition support)
+- **Rust**: Toolchain 1.84+ (2024 edition support)
 - **Cargo**: Standard package manager included with Rust
 
 ---
 
 ## Quick Start
 
-### 1. Clone & Build Workspace
+### 1. Build Workspace Crates
 
 Clone the repository and compile all workspace crates:
 
@@ -94,9 +100,17 @@ Clone the repository and compile all workspace crates:
 cargo build --workspace
 ```
 
-### 2. Run the Framework Application
+### 2. Install `hexbuffer-cli` Globally
 
-To start the HTTP server with default in-memory storage fallback:
+Install the CLI binary onto your local Cargo path:
+
+```bash
+cargo install --path crates/cli
+```
+
+### 3. Run the Framework Application
+
+To start the server with default in-memory storage fallback:
 
 ```bash
 cargo run -p hexbuffer-framework
@@ -104,58 +118,60 @@ cargo run -p hexbuffer-framework
 
 The server binds to `http://0.0.0.0:3000` by default.
 
-### 3. Run the CLI Tool
-
-The workspace includes `arch-cli` to assist with project management and code generation:
-
-```bash
-cargo run -p arch-cli -- --help
-```
-
 ---
 
-## CLI Tooling (`arch-cli`)
+## CLI Tooling (`hexbuffer-cli` / `arch-cli`)
 
-`arch-cli` simplifies adding new capabilities while enforcing architecture boundaries.
+`hexbuffer-cli` enforces architectural boundaries while eliminating manual boilerplate.
 
-### Scaffolding a Project
+### Subcommands Overview
+
+| Command | Alias | Description |
+| --- | --- | --- |
+| `hexbuffer-cli new` | — | Interactively scaffold a new Hexagonal Rust microservice |
+| `hexbuffer-cli generate` | `hexbuffer-cli g` | Interactively generate Domain Models, Repositories, HTTP handlers, or gRPC services |
+| `hexbuffer-cli migrate` | — | Manage SQL migrations (`create`, `run`, `status`) |
+| `hexbuffer-cli run` | — | Run project via `cargo run` |
+
+### Scaffolding a New Project
 
 ```bash
-cargo run -p arch-cli -- new
+hexbuffer-cli new
 ```
+
+Prompts for:
+- Project Name
+- Database Driver (PostgreSQL, SQLite, In-Memory)
+- Primary Inbound Adapter (Axum HTTP, Tonic gRPC, CLI)
+- Docker & Docker-Compose inclusion
 
 ### Generating Architecture Components
 
-Interactively generate domain entities, inbound service ports, outbound repository ports, and adapters:
-
 ```bash
-cargo run -p arch-cli -- generate
+hexbuffer-cli generate
+# or
+hexbuffer-cli g
 ```
 
-Alias:
+Generates:
+1. **Domain Model**: Entity struct & Domain Error enum
+2. **Outbound Adapter**: Repository Trait Port + Postgres & In-Memory Adapters
+3. **Inbound Adapter**: Service Trait Port + Axum HTTP Handler
+4. **gRPC Service**: Protobuf `.proto` spec + Tonic Server Adapter
+5. **Full Feature Slice**: Generates all of the above in one command
+
+### Database Migrations
 
 ```bash
-cargo run -p arch-cli -- g
+# Create a new SQL migration file in migrations/
+hexbuffer-cli migrate create
+
+# Run pending database migrations
+hexbuffer-cli migrate run
+
+# Check migration status
+hexbuffer-cli migrate status
 ```
-
-### Executing the Project
-
-```bash
-cargo run -p arch-cli -- run
-```
-
----
-
-## Configuration
-
-Configuration is managed via environment variables and loaded using `Figment`.
-
-| Environment Variable | Default Value | Description |
-|----------------------|---------------|-------------|
-| `SERVER_HOST` | `0.0.0.0` | Host interface address for HTTP server |
-| `SERVER_PORT` | `3000` | Port number for HTTP server |
-| `DATABASE_URL` | `postgres://postgres:postgres@localhost:5432/hexbuffer` | Connection string for PostgreSQL database |
-| `USE_MEMORY_FALLBACK` | `true` | When set to `true`, falls back to in-memory store if DB is unreachable |
 
 ---
 

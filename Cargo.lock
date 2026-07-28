@@ -74,18 +74,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470"
 
 [[package]]
-name = "arch-cli"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "heck",
- "inquire",
- "minijinja",
- "tokio",
-]
-
-[[package]]
 name = "async-trait"
 version = "0.1.91"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -659,6 +647,18 @@ name = "hex"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+
+[[package]]
+name = "hexbuffer-cli"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "heck",
+ "inquire",
+ "minijinja",
+ "tokio",
+]
 
 [[package]]
 name = "hexbuffer-framework"

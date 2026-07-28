@@ -12,7 +12,8 @@ pub fn handle_generate() -> Result<()> {
             "Domain Model (Entity & Errors)",
             "Outbound Adapter (Repository Port + Postgres/Memory)",
             "Inbound Adapter (Service Port + Axum Route Handler)",
-            "Full Feature Slice (Domain + Ports + Adapters)",
+            "gRPC Service (Proto Spec + Tonic Server Adapter)",
+            "Full Feature Slice (Domain + Ports + HTTP/gRPC Adapters)",
         ],
     ).prompt()?;
 
@@ -37,10 +38,14 @@ pub fn handle_generate() -> Result<()> {
         c if c.starts_with("Inbound Adapter") => {
             generate_inbound(&generator, root, &struct_name, &snake_name)?;
         }
+        c if c.starts_with("gRPC Service") => {
+            generate_grpc(&generator, root, &struct_name, &snake_name)?;
+        }
         _ => {
             generate_domain(&generator, root, &struct_name, &snake_name)?;
             generate_outbound(&generator, root, &struct_name, &snake_name, &table_name)?;
             generate_inbound(&generator, root, &struct_name, &snake_name)?;
+            generate_grpc(&generator, root, &struct_name, &snake_name)?;
         }
     }
 
@@ -114,6 +119,27 @@ fn generate_inbound(generator: &CodeGenerator, root: &Path, struct_name: &str, s
     let http_target = http_adapters_dir.join(format!("{}_handler.rs", snake_name));
     fs::write(&http_target, http_code)?;
     println!("  [+] Generated HTTP Handler Adapter: {}", http_target.display());
+
+    Ok(())
+}
+
+fn generate_grpc(generator: &CodeGenerator, root: &Path, struct_name: &str, snake_name: &str) -> Result<()> {
+    let service_trait = format!("{}Service", struct_name);
+    let proto_dir = root.join("proto");
+    let grpc_adapters_dir = root.join("src/adapters/inbound/grpc");
+
+    fs::create_dir_all(&proto_dir)?;
+    fs::create_dir_all(&grpc_adapters_dir)?;
+
+    let proto_code = generator.render_grpc_proto(snake_name, struct_name)?;
+    let proto_target = proto_dir.join(format!("{}.proto", snake_name));
+    fs::write(&proto_target, proto_code)?;
+    println!("  [+] Generated Protobuf Spec: {}", proto_target.display());
+
+    let grpc_code = generator.render_grpc_server_adapter(snake_name, struct_name, &service_trait)?;
+    let grpc_target = grpc_adapters_dir.join(format!("{}_grpc.rs", snake_name));
+    fs::write(&grpc_target, grpc_code)?;
+    println!("  [+] Generated Tonic gRPC Server Adapter: {}", grpc_target.display());
 
     Ok(())
 }

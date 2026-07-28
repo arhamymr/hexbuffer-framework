@@ -18,6 +18,11 @@ impl<'a> CodeGenerator<'a> {
         env.add_template("inbound_port", include_str!("inbound_port.j2"))?;
         env.add_template("inbound_service_impl", include_str!("inbound_service_impl.j2"))?;
         env.add_template("inbound_http_handler", include_str!("inbound_http_handler.j2"))?;
+        env.add_template("dockerfile", include_str!("dockerfile.j2"))?;
+        env.add_template("docker_compose", include_str!("docker_compose.j2"))?;
+        env.add_template("grpc_proto", include_str!("grpc_proto.j2"))?;
+        env.add_template("grpc_server_adapter", include_str!("grpc_server_adapter.j2"))?;
+        env.add_template("migration_sql", include_str!("migration_sql.j2"))?;
 
         Ok(Self { env })
     }
@@ -94,5 +99,30 @@ impl<'a> CodeGenerator<'a> {
             struct_name => struct_name,
             service_trait_name => service_trait_name,
         })?)
+    }
+
+    pub fn render_dockerfile(&self, project_name: &str) -> Result<String> {
+        let tmpl = self.env.get_template("dockerfile")?;
+        Ok(tmpl.render(context! { project_name => project_name })?)
+    }
+
+    pub fn render_docker_compose(&self, project_name: &str) -> Result<String> {
+        let tmpl = self.env.get_template("docker_compose")?;
+        Ok(tmpl.render(context! { project_name => project_name })?)
+    }
+
+    pub fn render_grpc_proto(&self, snake_name: &str, struct_name: &str) -> Result<String> {
+        let tmpl = self.env.get_template("grpc_proto")?;
+        Ok(tmpl.render(context! { snake_name => snake_name, struct_name => struct_name })?)
+    }
+
+    pub fn render_grpc_server_adapter(&self, snake_name: &str, struct_name: &str, service_trait_name: &str) -> Result<String> {
+        let tmpl = self.env.get_template("grpc_server_adapter")?;
+        Ok(tmpl.render(context! { snake_name => snake_name, struct_name => struct_name, service_trait_name => service_trait_name })?)
+    }
+
+    pub fn render_migration_sql(&self, migration_name: &str, table_name: &str, timestamp: &str) -> Result<String> {
+        let tmpl = self.env.get_template("migration_sql")?;
+        Ok(tmpl.render(context! { migration_name => migration_name, table_name => table_name, timestamp => timestamp })?)
     }
 }

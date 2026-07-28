@@ -1,0 +1,8 @@
+-- Migration: {{ migration_name }}
+-- Created at: {{ timestamp }}
+
+CREATE TABLE IF NOT EXISTS {{ table_name }} (
+    id VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package {{ snake_name }};
+
+service {{ struct_name }}Service {
+  rpc Get (GetRequest) returns (GetResponse);
+  rpc Create (CreateRequest) returns (CreateResponse);
+}
+
+message GetRequest {
+  string id = 1;
+}
+
+message GetResponse {
+  string id = 1;
+  string name = 2;
+  string created_at = 3;
+}
+
+message CreateRequest {
+  string name = 1;
+}
+
+message CreateResponse {
+  string id = 1;
+  string name = 2;
+  string created_at = 3;
+}
