@@ -1,18 +1,18 @@
-# HexBuffer Framework & `hexbuffer-cli`
+# HexBuffer Framework & `hb-cli`
 
 **HexBuffer Framework** is a modular, production-ready Rust application framework built on the principles of **Hexagonal Architecture (Ports and Adapters)**. It isolates pure domain logic from external dependencies, transport layers, and databases, allowing for high testability, maintainability, and seamless infrastructure swapping.
 
-Includes **`hexbuffer-cli`** (alias: `arch-cli`), an interactive CLI tool inspired by modern web/Go frameworks to scaffold microservices, domain models, ports, HTTP/gRPC adapters, Docker environments, and SQL migrations.
+Includes **`hb-cli`** (aliases: `hexbuffer-cli`, `arch-cli`), a developer CLI tool to scaffold microservices, domain models, ports, HTTP/gRPC adapters, Docker environments, and SQL migrations.
 
 ---
 
 ## Features
 
 - **Hexagonal Architecture**: Strict separation between core Domain logic, Inbound/Outbound Ports, and Adapter implementations.
-- **Interactive Scaffolding CLI (`hexbuffer-cli` / `arch-cli`)**: Interactive terminal prompts for generating projects, domain models, ports, adapters, gRPC services, and migrations.
+- **Interactive Scaffolding CLI (`hb-cli`)**: Short & fast terminal commands for generating projects, domain models, ports, adapters, gRPC services, and migrations.
 - **Asynchronous HTTP & gRPC Runtimes**: Powered by Tokio, Axum for REST APIs, and Tonic for gRPC services.
 - **Pluggable Persistence**: Built-in repository implementations using SQLx (PostgreSQL and SQLite) with automatic thread-safe in-memory fallback for local development.
-- **Database Migrations (`hexbuffer-cli migrate`)**: Integrated CLI for generating timestamped SQL migrations and running database schema updates.
+- **Database Migrations (`hb-cli migrate`)**: Integrated CLI for generating timestamped SQL migrations and running database schema updates.
 - **Docker & Container Scaffolding**: Multi-stage `Dockerfile` and `docker-compose.yml` generation for quick deployment with PostgreSQL and Redis.
 - **Layered Configuration**: Environment and file-based configuration loading via Figment.
 - **Structured Observability**: Integrated `tracing` and `tracing-subscriber` setup for structured logging and HTTP request span tracing.
@@ -40,45 +40,12 @@ hexbuffer-framework/
 │   │   │   ├── config/        # Environment and application configuration (Figment)
 │   │   │   └── telemetry/     # Tracing and logging initialization
 │   │   └── Cargo.toml
-│   └── cli/                    # Scaffolder CLI binary (`hexbuffer-cli` / `arch-cli`)
+│   └── cli/                    # Scaffolder CLI binary (`hb-cli` / `hexbuffer-cli` / `arch-cli`)
 │       ├── src/
-│       │   ├── bin/           # arch-cli compatibility alias binary
+│       │   ├── bin/           # hb-cli & arch-cli binary entrypoints
 │       │   ├── commands/      # Subcommands: new, generate (g), migrate, run
 │       │   └── templates/     # MiniJinja code & config generation templates
 │       └── Cargo.toml
-```
-
----
-
-## Data Flow Diagram
-
-```text
-[ HTTP Client / gRPC Client / External Services ]
-                        |
-                        v
-         +-----------------------------+
-         |      Inbound Adapter        |  (Axum REST / Tonic gRPC / CLI)
-         +-----------------------------+
-                        |
-                        v
-         +-----------------------------+
-         |        Inbound Port         |  (Service Trait Interface)
-         +-----------------------------+
-                        |
-                        v
-         +-----------------------------+
-         |        Domain Logic         |  (Pure Entities & Domain Errors)
-         +-----------------------------+
-                        |
-                        v
-         +-----------------------------+
-         |        Outbound Port        |  (Repository Trait Interface)
-         +-----------------------------+
-                        |
-                        v
-         +-----------------------------+
-         |      Outbound Adapter       |  (PostgreSQL / SQLite / Memory Repo)
-         +-----------------------------+
 ```
 
 ---
@@ -100,13 +67,15 @@ Clone the repository and compile all workspace crates:
 cargo build --workspace
 ```
 
-### 2. Install `hexbuffer-cli` Globally
+### 2. Install `hb-cli` Globally
 
 Install the CLI binary onto your local Cargo path:
 
 ```bash
 cargo install --path crates/cli
 ```
+
+Now `hb-cli` is available globally in your shell!
 
 ### 3. Run the Framework Application
 
@@ -116,27 +85,25 @@ To start the server with default in-memory storage fallback:
 cargo run -p hexbuffer-framework
 ```
 
-The server binds to `http://0.0.0.0:3000` by default.
-
 ---
 
-## CLI Tooling (`hexbuffer-cli` / `arch-cli`)
+## CLI Tooling (`hb-cli`)
 
-`hexbuffer-cli` enforces architectural boundaries while eliminating manual boilerplate.
+`hb-cli` enforces architectural boundaries while eliminating manual boilerplate.
 
 ### Subcommands Overview
 
 | Command | Alias | Description |
 | --- | --- | --- |
-| `hexbuffer-cli new` | — | Interactively scaffold a new Hexagonal Rust microservice |
-| `hexbuffer-cli generate` | `hexbuffer-cli g` | Interactively generate Domain Models, Repositories, HTTP handlers, or gRPC services |
-| `hexbuffer-cli migrate` | — | Manage SQL migrations (`create`, `run`, `status`) |
-| `hexbuffer-cli run` | — | Run project via `cargo run` |
+| `hb-cli new` | — | Interactively scaffold a new Hexagonal Rust microservice |
+| `hb-cli generate` | `hb-cli g` | Interactively generate Domain Models, Repositories, HTTP handlers, or gRPC services |
+| `hb-cli migrate` | — | Manage SQL migrations (`create`, `run`, `status`) |
+| `hb-cli run` | — | Run project via `cargo run` |
 
 ### Scaffolding a New Project
 
 ```bash
-hexbuffer-cli new
+hb-cli new
 ```
 
 Prompts for:
@@ -148,9 +115,9 @@ Prompts for:
 ### Generating Architecture Components
 
 ```bash
-hexbuffer-cli generate
+hb-cli generate
 # or
-hexbuffer-cli g
+hb-cli g
 ```
 
 Generates:
@@ -164,13 +131,13 @@ Generates:
 
 ```bash
 # Create a new SQL migration file in migrations/
-hexbuffer-cli migrate create
+hb-cli migrate create
 
 # Run pending database migrations
-hexbuffer-cli migrate run
+hb-cli migrate run
 
 # Check migration status
-hexbuffer-cli migrate status
+hb-cli migrate status
 ```
 
 ---

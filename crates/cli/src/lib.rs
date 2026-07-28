@@ -8,7 +8,7 @@ use commands::{handle_generate, handle_migrate, handle_new, handle_run};
 
 #[derive(Parser)]
 #[command(
-    name = "hexbuffer-cli",
+    name = "hb-cli",
     about = "Interactive Hexagonal Architecture Rust Framework Generator & Tooling",
     version,
     long_about = "CLI tool enforcing Ports & Adapters (Hexagonal Architecture) in Rust with rapid scaffolding."
