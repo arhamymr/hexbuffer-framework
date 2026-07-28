@@ -115,6 +115,7 @@ pub fn handle_new() -> Result<()> {
 pub struct AppConfig {
     pub server: ServerConfig,
     pub database: DatabaseConfig,
+    pub auth: AuthConfig,
 }
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ServerConfig { pub host: String, pub port: u16 }
@@ -122,6 +123,9 @@ impl Default for ServerConfig { fn default() -> Self { Self { host: "0.0.0.0".to
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct DatabaseConfig { pub url: String, pub max_connections: u32, pub use_memory_fallback: bool }
 impl Default for DatabaseConfig { fn default() -> Self { Self { url: "postgres://localhost:5432/db".to_string(), max_connections: 5, use_memory_fallback: true } } }
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct AuthConfig { pub token_type: String, pub token_secret: String, pub expiration_secs: i64 }
+impl Default for AuthConfig { fn default() -> Self { Self { token_type: "paseto".to_string(), token_secret: "YELLOW SUBMARINE, BLACK SUBMARIN".to_string(), expiration_secs: 86400 } } }
 impl AppConfig { pub fn load() -> Result<Self, String> { Ok(Self::default()) } }
 "#)?;
 

@@ -16,4 +16,8 @@ pub enum DomainError {
     RepositoryError(String),
     #[error("Validation error: {0}")]
     ValidationError(String),
+    #[error("Unauthorized: {0}")]
+    Unauthorized(String),
+    #[error("Invalid token: {0}")]
+    InvalidToken(String),
 }
