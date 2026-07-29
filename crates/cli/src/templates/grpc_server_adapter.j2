@@ -2,12 +2,50 @@ use std::sync::Arc;
 use tonic::{Request, Response, Status};
 use crate::ports::inbound::{{ snake_name }}_service::{{ service_trait_name }};
 
-pub struct {{ struct_name }}GrpcServer {
+pub mod proto {
+    tonic::include_proto!("{{ snake_name }}");
+}
+
+use proto::{{ snake_name }}_service_server::{{ snake_name }}Service as {{ struct_name }}GrpcTrait;
+use proto::*;
+
+pub struct {{ struct_name }}GrpcServerAdapter {
     service: Arc<dyn {{ service_trait_name }}>,
 }
 
-impl {{ struct_name }}GrpcServer {
+impl {{ struct_name }}GrpcServerAdapter {
     pub fn new(service: Arc<dyn {{ service_trait_name }}>) -> Self {
         Self { service }
+    }
+}
+
+#[tonic::async_trait]
+impl {{ struct_name }}GrpcTrait for {{ struct_name }}GrpcServerAdapter {
+    async fn get_{{ snake_name }}(
+        &self,
+        request: Request<Get{{ struct_name }}Request>,
+    ) -> Result<Response<{{ struct_name }}Response>, Status> {
+        let req = request.into_inner();
+        match self.service.get(&req.id).await {
+            Ok(item) => Ok(Response::new({{ struct_name }}Response {
+                id: item.id,
+                name: item.name,
+            })),
+            Err(e) => Err(Status::not_found(e.to_string())),
+        }
+    }
+
+    async fn create_{{ snake_name }}(
+        &self,
+        request: Request<Create{{ struct_name }}Request>,
+    ) -> Result<Response<{{ struct_name }}Response>, Status> {
+        let req = request.into_inner();
+        match self.service.create(req.name).await {
+            Ok(item) => Ok(Response::new({{ struct_name }}Response {
+                id: item.id,
+                name: item.name,
+            })),
+            Err(e) => Err(Status::invalid_argument(e.to_string())),
+        }
     }
 }

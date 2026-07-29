@@ -1,22 +1,37 @@
 use async_trait::async_trait;
-use sqlx::{PgPool, Row};
+use sqlx::{SqlitePool, Row};
 use crate::domain::user::{DomainError, Email, User, UserId};
 use crate::ports::outbound::user_repo::UserRepository;
 
-pub struct PostgresUserRepository {
-    pool: PgPool,
+pub struct SqliteUserRepository {
+    pool: SqlitePool,
 }
 
-impl PostgresUserRepository {
-    pub fn new(pool: PgPool) -> Self {
+impl SqliteUserRepository {
+    pub fn new(pool: SqlitePool) -> Self {
         Self { pool }
+    }
+
+    pub async fn migrate(&self) -> Result<(), DomainError> {
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS users (
+                id            TEXT PRIMARY KEY,
+                name          TEXT NOT NULL,
+                email         TEXT NOT NULL UNIQUE,
+                password_hash TEXT
+            )"
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| DomainError::RepositoryError(e.to_string()))?;
+        Ok(())
     }
 }
 
 #[async_trait]
-impl UserRepository for PostgresUserRepository {
+impl UserRepository for SqliteUserRepository {
     async fn find_by_id(&self, id: &UserId) -> Result<User, DomainError> {
-        let row = sqlx::query("SELECT id, name, email, password_hash FROM users WHERE id = $1")
+        let row = sqlx::query("SELECT id, name, email, password_hash FROM users WHERE id = ?")
             .bind(id.as_str())
             .fetch_optional(&self.pool)
             .await
@@ -38,7 +53,7 @@ impl UserRepository for PostgresUserRepository {
     }
 
     async fn find_by_email(&self, email: &Email) -> Result<User, DomainError> {
-        let row = sqlx::query("SELECT id, name, email, password_hash FROM users WHERE email = $1")
+        let row = sqlx::query("SELECT id, name, email, password_hash FROM users WHERE email = ?")
             .bind(email.as_str())
             .fetch_optional(&self.pool)
             .await
@@ -61,8 +76,8 @@ impl UserRepository for PostgresUserRepository {
 
     async fn save(&self, user: &User) -> Result<(), DomainError> {
         sqlx::query(
-            "INSERT INTO users (id, name, email, password_hash) VALUES ($1, $2, $3, $4) \
-             ON CONFLICT (id) DO UPDATE SET name = $2, email = $3, password_hash = $4"
+            "INSERT INTO users (id, name, email, password_hash) VALUES (?, ?, ?, ?) \
+             ON CONFLICT(id) DO UPDATE SET name = excluded.name, email = excluded.email, password_hash = excluded.password_hash"
         )
         .bind(user.id.as_str())
         .bind(&user.name)
@@ -97,7 +112,7 @@ impl UserRepository for PostgresUserRepository {
     }
 
     async fn delete(&self, id: &UserId) -> Result<(), DomainError> {
-        let result = sqlx::query("DELETE FROM users WHERE id = $1")
+        let result = sqlx::query("DELETE FROM users WHERE id = ?")
             .bind(id.as_str())
             .execute(&self.pool)
             .await

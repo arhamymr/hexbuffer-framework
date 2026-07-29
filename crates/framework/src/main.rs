@@ -5,9 +5,9 @@ use tracing::{info, warn};
 use hexbuffer_framework::{
     adapters::{
         inbound::{http::{user_routes, AppState}, UserServiceImpl},
-        outbound::{JwtTokenService, MemoryUserRepository, PasetoTokenService, PostgresUserRepository},
+        outbound::{JwtTokenService, MemoryUserRepository, PasetoTokenService, PostgresUserRepository, SqliteUserRepository},
     },
-    config::AppConfig,
+    config::{AppConfig, DatabaseDriver},
     ports::{
         inbound::UserService,
         outbound::{TokenService, UserRepository},
@@ -30,9 +30,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 port: 3000,
             },
             database: hexbuffer_framework::config::DatabaseConfig {
+                driver: DatabaseDriver::Memory,
                 url: "postgres://postgres:postgres@localhost:5432/hexbuffer".to_string(),
                 max_connections: 5,
-                use_memory_fallback: true,
             },
             auth: hexbuffer_framework::config::AuthConfig {
                 token_type: "paseto".to_string(),
@@ -42,17 +42,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    // 3. Instantiate Outbound Repository Adapter based on configuration
-    let user_repo: Arc<dyn UserRepository> = if config.database.use_memory_fallback {
-        info!("📦 Using In-Memory UserRepository (Development mode)");
-        Arc::new(MemoryUserRepository::new())
-    } else {
-        info!("🐘 Connecting to Postgres DB: {}", config.database.url);
-        match sqlx::PgPool::connect(&config.database.url).await {
-            Ok(pool) => Arc::new(PostgresUserRepository::new(pool)),
-            Err(e) => {
-                warn!("Failed to connect to Postgres ({}), falling back to MemoryUserRepository", e);
-                Arc::new(MemoryUserRepository::new())
+    // 3. Instantiate Outbound Repository Adapter based on driver selection
+    let user_repo: Arc<dyn UserRepository> = match config.database.driver {
+        DatabaseDriver::Memory => {
+            info!("📦 Using In-Memory UserRepository (Development mode)");
+            Arc::new(MemoryUserRepository::new())
+        }
+        DatabaseDriver::Sqlite => {
+            info!("🗄️  Connecting to SQLite DB: {}", config.database.url);
+            match sqlx::SqlitePool::connect(&config.database.url).await {
+                Ok(pool) => {
+                    let repo = SqliteUserRepository::new(pool);
+                    repo.migrate().await?;
+                    Arc::new(repo)
+                }
+                Err(e) => {
+                    warn!("Failed to connect to SQLite ({}), falling back to MemoryUserRepository", e);
+                    Arc::new(MemoryUserRepository::new())
+                }
+            }
+        }
+        DatabaseDriver::Postgres => {
+            info!("🐘 Connecting to Postgres DB: {}", config.database.url);
+            match sqlx::PgPool::connect(&config.database.url).await {
+                Ok(pool) => Arc::new(PostgresUserRepository::new(pool)),
+                Err(e) => {
+                    warn!("Failed to connect to Postgres ({}), falling back to MemoryUserRepository", e);
+                    Arc::new(MemoryUserRepository::new())
+                }
             }
         }
     };
@@ -81,6 +98,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let bind_addr = format!("{}:{}", config.server.host, config.server.port);
     let listener = tokio::net::TcpListener::bind(&bind_addr).await?;
     info!("⚡ Server listening on http://{}", bind_addr);
+    info!("   GET  /health");
+    info!("   POST /auth/login   (email + password)");
+    info!("   GET  /auth/me      (Bearer token required)");
+    info!("   POST /users");
+    info!("   GET  /users");
+    info!("   GET  /users/{{id}}");
+    info!("   PUT  /users/{{id}}");
+    info!("   DELETE /users/{{id}}");
 
     axum::serve(listener, app).await?;
 

@@ -17,11 +17,33 @@ pub struct ServerConfig {
     pub port: u16,
 }
 
+/// Which database driver to use.
+///
+/// Accepted values for `database.driver` in `App.toml` or the `DATABASE_DRIVER` env var:
+/// - `"postgres"` — connect to a PostgreSQL server via `database.url`
+/// - `"sqlite"`   — open/create an SQLite file via `database.url` (e.g. `"sqlite://app.db"`)
+/// - `"memory"`   — in-process in-memory store (no persistence, ideal for dev/testing)
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum DatabaseDriver {
+    Postgres,
+    Sqlite,
+    Memory,
+}
+
+impl Default for DatabaseDriver {
+    fn default() -> Self {
+        DatabaseDriver::Memory
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct DatabaseConfig {
+    /// Logical driver selection: `postgres`, `sqlite`, or `memory`.
+    pub driver: DatabaseDriver,
+    /// Connection URL used by the postgres and sqlite drivers.
     pub url: String,
     pub max_connections: u32,
-    pub use_memory_fallback: bool,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -35,13 +57,13 @@ impl AppConfig {
     pub fn load() -> Result<Self, figment::Error> {
         Figment::new()
             .merge(("server.host", "0.0.0.0"))
-            .merge(("server.port", 3000))
+            .merge(("server.port", 3000u16))
+            .merge(("database.driver", "memory"))
             .merge(("database.url", "postgres://postgres:postgres@localhost:5432/hexbuffer"))
-            .merge(("database.max_connections", 5))
-            .merge(("database.use_memory_fallback", true))
+            .merge(("database.max_connections", 5u32))
             .merge(("auth.token_type", "paseto"))
             .merge(("auth.token_secret", "YELLOW SUBMARINE, BLACK SUBMARINE"))
-            .merge(("auth.expiration_secs", 86400))
+            .merge(("auth.expiration_secs", 86400i64))
             .merge(Toml::file("App.toml").nested())
             .merge(Env::raw())
             .extract()

@@ -1,20 +1,34 @@
-use sqlx::{PgPool, Row};
+use sqlx::{SqlitePool, Row};
 use crate::domain::{{ snake_name }}::{ {{ struct_name }}, {{ struct_name }}DomainError };
 use crate::ports::outbound::{{ snake_name }}_repo::{{ trait_name }};
 
 pub struct {{ adapter_name }} {
-    pool: PgPool,
+    pool: SqlitePool,
 }
 
 impl {{ adapter_name }} {
-    pub fn new(pool: PgPool) -> Self {
+    pub fn new(pool: SqlitePool) -> Self {
         Self { pool }
+    }
+
+    pub async fn migrate(&self) -> Result<(), {{ struct_name }}DomainError> {
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS {{ table_name }} (
+                id         TEXT PRIMARY KEY,
+                name       TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )"
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {{ struct_name }}DomainError::StorageError(e.to_string()))?;
+        Ok(())
     }
 }
 
 impl {{ trait_name }} for {{ adapter_name }} {
     async fn find_by_id(&self, id: &str) -> Result<{{ struct_name }}, {{ struct_name }}DomainError> {
-        let row = sqlx::query("SELECT id, name, created_at FROM {{ table_name }} WHERE id = $1")
+        let row = sqlx::query("SELECT id, name, created_at FROM {{ table_name }} WHERE id = ?")
             .bind(id)
             .fetch_optional(&self.pool)
             .await
@@ -31,7 +45,7 @@ impl {{ trait_name }} for {{ adapter_name }} {
     }
 
     async fn find_by_name(&self, name: &str) -> Result<{{ struct_name }}, {{ struct_name }}DomainError> {
-        let row = sqlx::query("SELECT id, name, created_at FROM {{ table_name }} WHERE name = $1 LIMIT 1")
+        let row = sqlx::query("SELECT id, name, created_at FROM {{ table_name }} WHERE name = ? LIMIT 1")
             .bind(name)
             .fetch_optional(&self.pool)
             .await
@@ -48,13 +62,16 @@ impl {{ trait_name }} for {{ adapter_name }} {
     }
 
     async fn save(&self, entity: &{{ struct_name }}) -> Result<(), {{ struct_name }}DomainError> {
-        sqlx::query("INSERT INTO {{ table_name }} (id, name, created_at) VALUES ($1, $2, $3) ON CONFLICT (id) DO UPDATE SET name = $2")
-            .bind(&entity.id)
-            .bind(&entity.name)
-            .bind(&entity.created_at)
-            .execute(&self.pool)
-            .await
-            .map_err(|e| {{ struct_name }}DomainError::StorageError(e.to_string()))?;
+        sqlx::query(
+            "INSERT INTO {{ table_name }} (id, name, created_at) VALUES (?, ?, ?) \
+             ON CONFLICT(id) DO UPDATE SET name = excluded.name"
+        )
+        .bind(&entity.id)
+        .bind(&entity.name)
+        .bind(&entity.created_at)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {{ struct_name }}DomainError::StorageError(e.to_string()))?;
         Ok(())
     }
 
@@ -72,7 +89,7 @@ impl {{ trait_name }} for {{ adapter_name }} {
     }
 
     async fn delete(&self, id: &str) -> Result<(), {{ struct_name }}DomainError> {
-        let result = sqlx::query("DELETE FROM {{ table_name }} WHERE id = $1")
+        let result = sqlx::query("DELETE FROM {{ table_name }} WHERE id = ?")
             .bind(id)
             .execute(&self.pool)
             .await

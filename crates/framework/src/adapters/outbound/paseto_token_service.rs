@@ -29,7 +29,7 @@ impl TokenService for PasetoTokenService {
         let mut paseto_claims = PasetoClaims::new()
             .map_err(|e| DomainError::Unauthorized(format!("PASETO claims creation failed: {}", e)))?;
 
-        paseto_claims.subject(&user.id)
+        paseto_claims.subject(user.id.as_str())
             .map_err(|e| DomainError::Unauthorized(format!("PASETO claim set sub failed: {}", e)))?;
 
         paseto_claims.add_additional("email", user.email.as_str())
@@ -84,16 +84,17 @@ mod tests {
         let service = PasetoTokenService::new(secret, 3600).unwrap();
 
         let user = User {
-            id: "usr_200".to_string(),
+            id: UserId::new("usr_200"),
             name: "Bob".to_string(),
-            email: "bob@example.com".to_string(),
+            email: Email::new("bob@example.com").unwrap(),
+            password_hash: None,
         };
 
         let token = service.generate_token(&user).await.unwrap();
         assert!(token.starts_with("v4.local."));
 
         let claims = service.verify_token(&token).await.unwrap();
-        assert_eq!(claims.sub, user.id);
-        assert_eq!(claims.email, user.email);
+        assert_eq!(claims.sub, user.id.to_string());
+        assert_eq!(claims.email, user.email.to_string());
     }
 }

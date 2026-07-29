@@ -20,8 +20,8 @@ impl TokenService for JwtTokenService {
     async fn generate_token(&self, user: &User) -> Result<String, DomainError> {
         let now = chrono::Utc::now().timestamp();
         let claims = Claims {
-            sub: user.id.clone(),
-            email: user.email.clone(),
+            sub: user.id.to_string(),
+            email: user.email.to_string(),
             name: user.name.clone(),
             exp: now + self.expiration_secs,
             iat: now,
@@ -55,16 +55,17 @@ mod tests {
     async fn test_jwt_generate_and_verify() {
         let service = JwtTokenService::new("super_secret_key_123".to_string(), 3600);
         let user = User {
-            id: "usr_100".to_string(),
+            id: UserId::new("usr_100"),
             name: "Alice".to_string(),
-            email: "alice@example.com".to_string(),
+            email: Email::new("alice@example.com").unwrap(),
+            password_hash: None,
         };
 
         let token = service.generate_token(&user).await.unwrap();
         assert!(!token.is_empty());
 
         let claims = service.verify_token(&token).await.unwrap();
-        assert_eq!(claims.sub, user.id);
-        assert_eq!(claims.email, user.email);
+        assert_eq!(claims.sub, user.id.to_string());
+        assert_eq!(claims.email, user.email.to_string());
     }
 }

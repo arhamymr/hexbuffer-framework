@@ -18,4 +18,5 @@
 | [migrations.md](./migrations.md) | Database migrations management |
 | [docker.md](./docker.md) | Docker & Docker-Compose scaffolding |
 | [cli.md](./cli.md) | `hb-cli` developer tooling reference |
+| [roadmap.md](./roadmap.md) | 2026 Engineering Roadmap & feature completion status |
 | [agents.md](./agents.md) | AI agent context, architecture map, and contributor guidance |

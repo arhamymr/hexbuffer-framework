@@ -65,7 +65,7 @@ crates/framework/src/
 | Setting | Default |
 | --- | --- |
 | Token provider | **PASETO V4 Local** (`PasetoTokenService`) |
-| Database | **In-memory** (`MemoryUserRepository`) when `use_memory_fallback = true` |
+| Database driver | **In-memory** (`MemoryUserRepository`) when `database.driver = "memory"` (default) |
 | HTTP port | `3000` |
 | Token expiry | `86400s` (24h) |
 | Auth config default | `auth.token_type = "paseto"` |
@@ -78,12 +78,19 @@ crates/framework/src/
 cargo test --workspace
 ```
 
-**Current tests (5 total):**
+**Current tests (12 total):**
 | Test | File | What it tests |
 | --- | --- | --- |
 | `test_memory_repo_save_and_find` | `memory_user.rs` | In-memory repo save, find, list |
-| `test_create_and_get_user` | `user_service_impl.rs` | Business logic service creates user |
+| `test_memory_repo_find_by_email` | `memory_user.rs` | In-memory repo find_by_email |
+| `test_memory_repo_delete` | `memory_user.rs` | In-memory repo delete |
+| `test_create_and_get_user` | `user_service_impl.rs` | Business logic service creates user with password |
 | `test_validation_error` | `user_service_impl.rs` | Empty name returns ValidationError |
+| `test_login_success` | `user_service_impl.rs` | Login with correct password succeeds |
+| `test_login_wrong_password` | `user_service_impl.rs` | Login with wrong password returns Unauthorized |
+| `test_duplicate_email_conflict` | `user_service_impl.rs` | Duplicate email returns Conflict |
+| `test_update_user` | `user_service_impl.rs` | Update user name and email |
+| `test_delete_user` | `user_service_impl.rs` | Delete user removes from repo |
 | `test_jwt_generate_and_verify` | `jwt_token_service.rs` | JWT round-trip: generate → verify claims |
 | `test_paseto_generate_and_verify` | `paseto_token_service.rs` | PASETO V4 round-trip: generate → verify claims |
 

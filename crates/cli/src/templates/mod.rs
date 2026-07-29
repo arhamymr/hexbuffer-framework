@@ -22,6 +22,7 @@ impl<'a> CodeGenerator<'a> {
         env.add_template("docker_compose", include_str!("docker_compose.j2"))?;
         env.add_template("grpc_proto", include_str!("grpc_proto.j2"))?;
         env.add_template("grpc_server_adapter", include_str!("grpc_server_adapter.j2"))?;
+        env.add_template("outbound_sqlite_adapter", include_str!("outbound_sqlite_adapter.j2"))?;
         env.add_template("migration_sql", include_str!("migration_sql.j2"))?;
 
         Ok(Self { env })
@@ -53,6 +54,17 @@ impl<'a> CodeGenerator<'a> {
 
     pub fn render_outbound_postgres_adapter(&self, snake_name: &str, struct_name: &str, trait_name: &str, adapter_name: &str, table_name: &str) -> Result<String> {
         let tmpl = self.env.get_template("outbound_postgres_adapter")?;
+        Ok(tmpl.render(context! {
+            snake_name => snake_name,
+            struct_name => struct_name,
+            trait_name => trait_name,
+            adapter_name => adapter_name,
+            table_name => table_name,
+        })?)
+    }
+
+    pub fn render_outbound_sqlite_adapter(&self, snake_name: &str, struct_name: &str, trait_name: &str, adapter_name: &str, table_name: &str) -> Result<String> {
+        let tmpl = self.env.get_template("outbound_sqlite_adapter")?;
         Ok(tmpl.render(context! {
             snake_name => snake_name,
             struct_name => struct_name,
