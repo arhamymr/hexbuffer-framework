@@ -1,8 +1,8 @@
-use async_trait::async_trait;
-use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use crate::domain::auth::Claims;
 use crate::domain::user::{DomainError, User};
 use crate::ports::outbound::token_service::TokenService;
+use async_trait::async_trait;
+use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 
 pub struct JwtTokenService {
     secret: String,
@@ -11,7 +11,10 @@ pub struct JwtTokenService {
 
 impl JwtTokenService {
     pub fn new(secret: String, expiration_secs: i64) -> Self {
-        Self { secret, expiration_secs }
+        Self {
+            secret,
+            expiration_secs,
+        }
     }
 }
 
